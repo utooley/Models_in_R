@@ -6,25 +6,67 @@ output: word_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, results='asis')
 ```
 
-## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+##Data prep
+```{r}
+library(haven)
+atlas<-read_sav("data/ATLAS.sav")
+atlas$use0 <- factor(atlas$use0, 
+                     levels=c(0,1), 
+                     labels=c("no", "yes"))
+atlas$intervention <- factor(atlas$intervention, 
+                             levels=c(0,1), 
+                             labels=c("no", "yes"))
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
-```{r cars}
-summary(cars)
 ```
 
-## Including Plots
 
-You can also embed plots, for example:
+##Running model
+```{r}
+model1 <- lm(STSE1~intervention*STSE0, data=atlas, na.action=na.exclude)
+plot(model1)
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+
+
+```
+##Summarizing the model
+
+
+```{r}
+library(pander)
+model.sum <- summary(model1)
+pander(model.sum)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+##Plotting
+```{r}
+library(ggplot2)
+ggplot(atlas,aes(x=STSE0, y=STSE1)) +
+  geom_point(alpha=.3)
+#alpha makes points transparent, goes from 1 to 0
+ggplot(atlas,aes(x=STSE0, y=STSE1, color=intervention)) +
+  geom_point(alpha=.3)
+#to plot a factor, get 2 scatterplots instead of one
+ggplot(atlas,aes(x=STSE0, y=STSE1, color=intervention)) +
+  geom_point(alpha=.3)+
+  facet_wrap(~intervention)
+atlas$intervention <- factor(atlas$intervention, levels=c("yes", "no"), labels=c("intervention", "control"))
+ggplot(atlas,aes(x=STSE0, y=STSE1, color=intervention)) +
+  geom_point(alpha=.3)+
+  facet_wrap(~intervention)
+
+#use predict to run exactly the line that your model predicts
+model1 <- lm(STSE1~intervention*STSE0, data=atlas, na.action=na.exclude)
+atlas$pred <- predict(model1,atlas)
+ggplot(atlas,aes(x=STSE0, y=STSE1, color=intervention)) +
+  geom_point(alpha=.3)
+
+
+```
+
+
+
